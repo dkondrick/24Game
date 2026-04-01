@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Make 24</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #14141f;
+    --card: #1c1c2e;
+    --card-selected: #2a2a4a;
+    --gold: #f0c040;
+    --gold-dim: #a08020;
+    --gold-glow: rgba(240, 192, 64, 0.3);
+    --red: #ff4060;
+    --green: #40e080;
+    --text: #e8e8f0;
+    --text-dim: #888898;
+    --radius: 16px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(240, 192, 64, 0.03) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(100, 60, 200, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(64, 224, 128, 0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 560px;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    animation: fadeDown 0.6s ease-out;
+  }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 3.2rem;
+    background: linear-gradient(135deg, var(--gold) 0%, #ffe080 50%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .header p {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-top: 6px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    animation: fadeDown 0.6s ease-out 0.1s both;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-top: 2px;
+  }
+
+  /* Number cards */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+    animation: fadeUp 0.5s ease-out 0.2s both;
+  }
+
+  .number-card {
+    aspect-ratio: 3/4;
+    background: var(--card);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 2.4rem;
+    color: var(--gold);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  .number-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.04), transparent 60%);
+    pointer-events: none;
+  }
+
+  .number-card:hover:not(.used):not(.disabled) {
+    border-color: var(--gold-dim);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+
+  .number-card.selected {
+    border-color: var(--gold);
+    background: var(--card-selected);
+    box-shadow: 0 0 20px var(--gold-glow);
+    transform: translateY(-3px);
+  }
+
+  .number-card.used {
+    opacity: 0.2;
+    cursor: default;
+    transform: none;
+  }
+
+  .number-card.disabled {
+    cursor: default;
+  }
+
+  .number-card .corner {
+    position: absolute;
+    font-size: 0.65rem;
+    color: var(--gold-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+  }
+
+  .number-card .corner.tl { top: 8px; left: 10px; }
+  .number-card .corner.br { bottom: 8px; right: 10px; transform: rotate(180deg); }
+
+  /* Operators */
+  .operators {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    animation: fadeUp 0.5s ease-out 0.3s both;
+  }
+
+  .op-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid var(--gold-dim);
+    background: var(--surface);
+    color: var(--gold);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .op-btn:hover {
+    border-color: var(--gold);
+    color: #ffe080;
+    box-shadow: 0 0 16px var(--gold-glow);
+    transform: scale(1.1);
+  }
+
+  .op-btn.disabled {
+    opacity: 0.3;
+    cursor: default;
+    transform: none !important;
+    box-shadow: none !important;
+    border-color: var(--gold-dim) !important;
+    color: var(--gold) !important;
+  }
+
+  /* Expression display */
+  .expression-area {
+    width: 100%;
+    min-height: 64px;
+    background: var(--surface);
+    border: 1px solid #2a2a3a;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.3rem;
+    color: var(--text);
+    animation: fadeUp 0.5s ease-out 0.35s both;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .expr-token {
+    padding: 4px 10px;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+
+  .expr-number { background: rgba(240, 192, 64, 0.1); color: var(--gold); }
+  .expr-op { color: var(--text-dim); }
+  .expr-result { color: var(--green); font-weight: 700; }
+  .expr-equals { color: var(--text-dim); }
+  .expr-placeholder { color: #333348; font-size: 0.9rem; font-weight: 500; font-family: 'DM Sans', sans-serif; }
+
+  /* Action buttons */
+  .actions {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    animation: fadeUp 0.5s ease-out 0.4s both;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .btn-undo {
+    background: var(--surface);
+    color: var(--text-dim);
+    border: 1px solid #2a2a3a;
+  }
+
+  .btn-undo:hover { border-color: #4a4a5a; color: var(--text); }
+
+  .btn-new {
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    color: var(--bg);
+  }
+
+  .btn-new:hover { box-shadow: 0 4px 20px var(--gold-glow); transform: translateY(-1px); }
+
+  /* Result message */
+  .message {
+    text-align: center;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    font-size: 1rem;
+  }
+
+  .message.win {
+    color: var(--green);
+    font-size: 1.3rem;
+    font-weight: 700;
+    animation: popIn 0.4s ease-out;
+  }
+
+  .message.lose {
+    color: var(--red);
+    animation: shake 0.4s ease-out;
+  }
+
+  .message.hint {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  /* History */
+  .history {
+    width: 100%;
+    animation: fadeUp 0.5s ease-out 0.45s both;
+  }
+
+  .history-title {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .history-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .history-step {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    padding: 6px 12px;
+    background: var(--surface);
+    border-radius: 8px;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  @keyframes cardReveal {
+    from { opacity: 0; transform: scale(0.8) rotateY(20deg); }
+    to { opacity: 1; transform: scale(1) rotateY(0); }
+  }
+
+  .card-reveal {
+    animation: cardReveal 0.4s ease-out both;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>Make 24</h1>
+    <p>Use all four numbers</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value" id="solvedCount">0</div>
+      <div class="stat-label">Solved</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="streakCount">0</div>
+      <div class="stat-label">Streak</div>
+    </div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="operators" id="operators">
+    <button class="op-btn disabled" data-op="+" onclick="selectOp('+')">+</button>
+    <button class="op-btn disabled" data-op="-" onclick="selectOp('−')">−</button>
+    <button class="op-btn disabled" data-op="*" onclick="selectOp('×')">×</button>
+    <button class="op-btn disabled" data-op="/" onclick="selectOp('÷')">÷</button>
+  </div>
+
+  <div class="expression-area" id="expression">
+    <span class="expr-placeholder">Pick a number to start</span>
+  </div>
+
+  <div class="message hint" id="message"></div>
+
+  <div class="history" id="historySection" style="display:none">
+    <div class="history-title">Steps</div>
+    <div class="history-steps" id="historySteps"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-undo" onclick="undo()">↩ Undo</button>
+    <button class="btn btn-new" onclick="newGame()">New Deal</button>
+  </div>
+</div>
+
+<script>
+  // Game state
+  let numbers = [];          // current available numbers [{value, id, original}]
+  let selectedNumber = null;  // index in numbers array
+  let selectedOp = null;
+  let history = [];           // [{a, op, b, result, text}]
+  let solved = 0;
+  let streak = 0;
+  let gameOver = false;
+  let nextId = 0;
+  let currentSolution = null; // stored solution for current puzzle
+
+  const EPS = 1e-9;
+  const OPS = [
+    { symbol: '+', fn: (a, b) => a + b },
+    { symbol: '−', fn: (a, b) => a - b },
+    { symbol: '×', fn: (a, b) => a * b },
+    { symbol: '÷', fn: (a, b) => b !== 0 ? a / b : null },
+  ];
+
+  // Robust solver that returns a solution path or null
+  function solve24(nums) {
+    if (nums.length === 1) {
+      return Math.abs(nums[0].val - 24) < EPS ? [] : null;
+    }
+    // Try all pairs
+    for (let i = 0; i < nums.length; i++) {
+      for (let j = 0; j < nums.length; j++) {
+        if (i === j) continue;
+        const remaining = nums.filter((_, k) => k !== i && k !== j);
+        const a = nums[i], b = nums[j];
+
+        for (const op of OPS) {
+          const result = op.fn(a.val, b.val);
+          if (result === null || !isFinite(result)) continue;
+
+          const newNums = [...remaining, { val: result, label: `(${a.label}${op.symbol}${b.label})` }];
+          const sub = solve24(newNums);
+          if (sub !== null) {
+            return [{ a: a.label, op: op.symbol, b: b.label, result }, ...sub];
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  // Quick boolean check for mid-game (no need to store path)
+  function canMake24(rawNums) {
+    const nums = rawNums.map((v, i) => ({ val: v, label: String(v) }));
+    return solve24(nums) !== null;
+  }
+
+  function generateSolvable() {
+    let attempts = 0;
+    while (attempts < 10000) {
+      const rawNums = Array.from({length: 4}, () => Math.floor(Math.random() * 13) + 1);
+      const nums = rawNums.map((v, i) => ({ val: v, label: String(v) }));
+      const solution = solve24(nums);
+      if (solution !== null) {
+        currentSolution = solution;
+        return rawNums;
+      }
+      attempts++;
+    }
+    // Fallback to a known solvable set
+    currentSolution = [{ a: '1', op: '×', b: '2', result: 2 }, { a: '2', op: '×', b: '3', result: 6 }, { a: '6', op: '×', b: '4', result: 24 }];
+    return [1, 2, 3, 4];
+  }
+
+  function newGame() {
+    const rawNums = generateSolvable();
+    nextId = 0;
+    numbers = rawNums.map(v => ({ value: v, id: nextId++, original: true }));
+    selectedNumber = null;
+    selectedOp = null;
+    history = [];
+    gameOver = false;
+    document.getElementById('message').textContent = '';
+    document.getElementById('message').className = 'message hint';
+    document.getElementById('historySection').style.display = 'none';
+    render();
+  }
+
+  function render() {
+    renderCards();
+    renderOperators();
+    renderExpression();
+    renderHistory();
+  }
+
+  function renderCards() {
+    const container = document.getElementById('cards');
+    container.innerHTML = '';
+    numbers.forEach((num, idx) => {
+      const card = document.createElement('div');
+      card.className = 'number-card card-reveal' + (selectedNumber === idx ? ' selected' : '') + (gameOver ? ' disabled' : '');
+      card.style.animationDelay = (idx * 0.08) + 's';
+      const displayVal = Number.isInteger(num.value) ? num.value :
+        (Math.abs(num.value) < 100 ? parseFloat(num.value.toFixed(2)) : Math.round(num.value));
+      card.innerHTML = `
+        <span class="corner tl">${displayVal}</span>
+        <span>${displayVal}</span>
+        <span class="corner br">${displayVal}</span>
+      `;
+      if (!gameOver) {
+        card.onclick = () => selectNumber(idx);
+      }
+      container.appendChild(card);
+    });
+  }
+
+  function renderOperators() {
+    const btns = document.querySelectorAll('.op-btn');
+    const enabled = selectedNumber !== null && selectedOp === null && !gameOver;
+    btns.forEach(btn => {
+      btn.classList.toggle('disabled', !enabled);
+    });
+  }
+
+  function renderExpression() {
+    const area = document.getElementById('expression');
+    if (selectedNumber !== null && selectedOp === null) {
+      area.innerHTML = `<span class="expr-token expr-number">${numbers[selectedNumber].value}</span>
+        <span class="expr-token expr-op">?</span>
+        <span class="expr-placeholder">pick an operator</span>`;
+    } else if (selectedNumber !== null && selectedOp !== null) {
+      area.innerHTML = `<span class="expr-token expr-number">${numbers[selectedNumber].value}</span>
+        <span class="expr-token expr-op">${selectedOp}</span>
+        <span class="expr-placeholder">pick second number</span>`;
+    } else {
+      area.innerHTML = `<span class="expr-placeholder">${gameOver ? 'Deal new cards to play again' : 'Pick a number to start'}</span>`;
+    }
+  }
+
+  function renderHistory() {
+    const section = document.getElementById('historySection');
+    const steps = document.getElementById('historySteps');
+    if (history.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+    steps.innerHTML = history.map((h, i) =>
+      `<div class="history-step">${i + 1}. ${h.text}</div>`
+    ).join('');
+  }
+
+  function selectNumber(idx) {
+    if (gameOver) return;
+
+    if (selectedNumber === null) {
+      // First number selection
+      selectedNumber = idx;
+      render();
+    } else if (selectedOp === null) {
+      // Clicked a number but no op yet — switch selection
+      selectedNumber = idx;
+      render();
+    } else {
+      // We have first number and op, this is the second number
+      if (idx === selectedNumber) return; // can't use same card
+
+      const a = numbers[selectedNumber].value;
+      const b = numbers[idx].value;
+      const opSymbol = selectedOp;
+      let result;
+
+      switch (opSymbol) {
+        case '+': result = a + b; break;
+        case '−': result = a - b; break;
+        case '×': result = a * b; break;
+        case '÷':
+          if (b === 0) {
+            showMessage('Can\'t divide by zero', 'lose');
+            selectedOp = null;
+            render();
+            return;
+          }
+          result = a / b;
+          break;
+      }
+
+      // Format result nicely
+      const displayResult = Number.isInteger(result) ? result : Math.round(result * 10000) / 10000;
+
+      // Record history
+      history.push({
+        a, op: opSymbol, b, result,
+        text: `${a} ${opSymbol} ${b} = ${displayResult}`,
+        removedIds: [numbers[selectedNumber].id, numbers[idx].id],
+        newId: nextId
+      });
+
+      // Replace the two numbers with the result
+      const newNumbers = numbers.filter((_, i) => i !== selectedNumber && i !== idx);
+      newNumbers.push({ value: result, id: nextId++, original: false });
+      numbers = newNumbers;
+      selectedNumber = null;
+      selectedOp = null;
+
+      // Check win/lose
+      if (numbers.length === 1) {
+        if (Math.abs(numbers[0].value - 24) < 0.001) {
+          gameOver = true;
+          solved++;
+          streak++;
+          document.getElementById('solvedCount').textContent = solved;
+          document.getElementById('streakCount').textContent = streak;
+          showMessage('✦ You made 24! ✦', 'win');
+        } else {
+          gameOver = true;
+          streak = 0;
+          document.getElementById('streakCount').textContent = streak;
+          showMessage(`Got ${Number.isInteger(numbers[0].value) ? numbers[0].value : numbers[0].value.toFixed(2)}, not 24`, 'lose');
+        }
+      } else {
+        // Check if remaining numbers can still make 24
+        const vals = numbers.map(n => n.value);
+        if (!canMake24(vals)) {
+          showMessage('No solution from here — try undoing', 'hint');
+        }
+      }
+
+      render();
+    }
+  }
+
+  function selectOp(op) {
+    if (selectedNumber === null || gameOver) return;
+    selectedOp = op;
+    render();
+  }
+
+  function undo() {
+    if (history.length === 0) return;
+
+    gameOver = false;
+    document.getElementById('message').textContent = '';
+    document.getElementById('message').className = 'message';
+
+    history.pop();
+    rebuildFromHistory();
+    selectedNumber = null;
+    selectedOp = null;
+    render();
+  }
+
+  let originalNumbers = [];
+
+  function rebuildFromHistory() {
+    nextId = 0;
+    numbers = originalNumbers.map(v => ({ value: v, id: nextId++, original: true }));
+
+    for (const h of history) {
+      const idxA = numbers.findIndex(n => Math.abs(n.value - h.a) < EPS);
+      let idxB = numbers.findIndex((n, i) => Math.abs(n.value - h.b) < EPS && i !== idxA);
+      if (idxB === -1) idxB = numbers.findIndex(n => Math.abs(n.value - h.b) < EPS);
+
+      let result;
+      switch (h.op) {
+        case '+': result = h.a + h.b; break;
+        case '−': result = h.a - h.b; break;
+        case '×': result = h.a * h.b; break;
+        case '÷': result = h.a / h.b; break;
+      }
+
+      numbers = numbers.filter((_, i) => i !== idxA && i !== idxB);
+      numbers.push({ value: result, id: nextId++, original: false });
+    }
+  }
+
+  // Wrap newGame to also save originalNumbers
+  const _baseNewGame = newGame;
+  newGame = function() {
+    _baseNewGame();
+    originalNumbers = numbers.map(n => n.value);
+  };
+
+  function showMessage(text, type) {
+    const msg = document.getElementById('message');
+    msg.textContent = text;
+    msg.className = 'message ' + (type || '');
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '+' || e.key === '=') selectOp('+');
+    if (e.key === '-') selectOp('−');
+    if (e.key === '*' || e.key === 'x') selectOp('×');
+    if (e.key === '/') selectOp('÷');
+    if (e.key === 'z' && (e.ctrlKey || e.metaKey)) undo();
+    if (e.key === 'n') newGame();
+    if (e.key >= '1' && e.key <= '4' && numbers.length >= parseInt(e.key)) {
+      selectNumber(parseInt(e.key) - 1);
+    }
+  });
+
+  // Start
+  newGame();
+</script>
+</body>
+</html>
