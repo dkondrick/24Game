@@ -34,7 +34,6 @@
     overflow-x: hidden;
   }
 
-  /* Background texture */
   body::before {
     content: '';
     position: fixed;
@@ -59,7 +58,73 @@
     gap: 28px;
   }
 
-  /* Header */
+  /* Side reminders */
+  .side-reminder {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 2;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+  }
+
+  .side-reminder:hover { opacity: 0.85; }
+
+  .side-reminder.left { left: 18px; align-items: flex-start; }
+  .side-reminder.right { right: 18px; align-items: flex-end; }
+
+  .side-reminder .factor {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--gold);
+    background: var(--surface);
+    border: 1px solid rgba(240, 192, 64, 0.15);
+    border-radius: 10px;
+    padding: 8px 12px;
+    white-space: nowrap;
+    letter-spacing: 1px;
+  }
+
+  .side-reminder .factor-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: -4px;
+  }
+
+  /* Hide side reminders on narrow screens, show inline version instead */
+  @media (max-width: 760px) {
+    .side-reminder { display: none; }
+    .inline-reminder { display: flex !important; }
+  }
+
+  .inline-reminder {
+    display: none;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    animation: fadeDown 0.6s ease-out 0.15s both;
+  }
+
+  .inline-reminder .factor {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--gold);
+    background: var(--surface);
+    border: 1px solid rgba(240, 192, 64, 0.15);
+    border-radius: 10px;
+    padding: 6px 12px;
+    letter-spacing: 1px;
+  }
+
   .header {
     text-align: center;
     animation: fadeDown 0.6s ease-out;
@@ -84,7 +149,6 @@
     text-transform: uppercase;
   }
 
-  /* Stats bar */
   .stats {
     display: flex;
     gap: 24px;
@@ -92,9 +156,7 @@
     animation: fadeDown 0.6s ease-out 0.1s both;
   }
 
-  .stat {
-    text-align: center;
-  }
+  .stat { text-align: center; }
 
   .stat-value {
     font-family: 'JetBrains Mono', monospace;
@@ -111,14 +173,17 @@
     margin-top: 2px;
   }
 
-  /* Number cards */
   .cards {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     width: 100%;
     animation: fadeUp 0.5s ease-out 0.2s both;
+    justify-content: center;
   }
+  .cards.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .cards.cols-3 { grid-template-columns: repeat(3, 1fr); max-width: 400px; }
+  .cards.cols-2 { grid-template-columns: repeat(2, 1fr); max-width: 280px; }
+  .cards.cols-1 { grid-template-columns: 1fr; max-width: 140px; }
 
   .number-card {
     aspect-ratio: 3/4;
@@ -147,7 +212,7 @@
     pointer-events: none;
   }
 
-  .number-card:hover:not(.used):not(.disabled) {
+  .number-card:hover:not(.disabled) {
     border-color: var(--gold-dim);
     transform: translateY(-3px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.3);
@@ -160,15 +225,7 @@
     transform: translateY(-3px);
   }
 
-  .number-card.used {
-    opacity: 0.2;
-    cursor: default;
-    transform: none;
-  }
-
-  .number-card.disabled {
-    cursor: default;
-  }
+  .number-card.disabled { cursor: default; }
 
   .number-card .corner {
     position: absolute;
@@ -181,7 +238,6 @@
   .number-card .corner.tl { top: 8px; left: 10px; }
   .number-card .corner.br { bottom: 8px; right: 10px; transform: rotate(180deg); }
 
-  /* Operators */
   .operators {
     display: flex;
     gap: 10px;
@@ -206,7 +262,7 @@
     justify-content: center;
   }
 
-  .op-btn:hover {
+  .op-btn:hover:not(.disabled) {
     border-color: var(--gold);
     color: #ffe080;
     box-shadow: 0 0 16px var(--gold-glow);
@@ -216,13 +272,8 @@
   .op-btn.disabled {
     opacity: 0.3;
     cursor: default;
-    transform: none !important;
-    box-shadow: none !important;
-    border-color: var(--gold-dim) !important;
-    color: var(--gold) !important;
   }
 
-  /* Expression display */
   .expression-area {
     width: 100%;
     min-height: 64px;
@@ -241,19 +292,11 @@
     gap: 8px;
   }
 
-  .expr-token {
-    padding: 4px 10px;
-    border-radius: 8px;
-    transition: all 0.2s;
-  }
-
+  .expr-token { padding: 4px 10px; border-radius: 8px; transition: all 0.2s; }
   .expr-number { background: rgba(240, 192, 64, 0.1); color: var(--gold); }
   .expr-op { color: var(--text-dim); }
-  .expr-result { color: var(--green); font-weight: 700; }
-  .expr-equals { color: var(--text-dim); }
-  .expr-placeholder { color: #333348; font-size: 0.9rem; font-weight: 500; font-family: 'DM Sans', sans-serif; }
+  .expr-placeholder { color: #555568; font-size: 0.9rem; font-weight: 500; font-family: 'DM Sans', sans-serif; }
 
-  /* Action buttons */
   .actions {
     display: flex;
     gap: 10px;
@@ -267,7 +310,7 @@
     border-radius: 12px;
     border: none;
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -280,17 +323,21 @@
     color: var(--text-dim);
     border: 1px solid #2a2a3a;
   }
-
   .btn-undo:hover { border-color: #4a4a5a; color: var(--text); }
+
+  .btn-hint {
+    background: var(--surface);
+    color: var(--gold-dim);
+    border: 1px solid #2a2a3a;
+  }
+  .btn-hint:hover { border-color: var(--gold-dim); color: var(--gold); }
 
   .btn-new {
     background: linear-gradient(135deg, var(--gold-dim), var(--gold));
     color: var(--bg);
   }
-
   .btn-new:hover { box-shadow: 0 4px 20px var(--gold-glow); transform: translateY(-1px); }
 
-  /* Result message */
   .message {
     text-align: center;
     min-height: 36px;
@@ -308,17 +355,9 @@
     animation: popIn 0.4s ease-out;
   }
 
-  .message.lose {
-    color: var(--red);
-    animation: shake 0.4s ease-out;
-  }
+  .message.lose { color: var(--red); animation: shake 0.4s ease-out; }
+  .message.hint { color: var(--text-dim); font-size: 0.85rem; }
 
-  .message.hint {
-    color: var(--text-dim);
-    font-size: 0.85rem;
-  }
-
-  /* History */
   .history {
     width: 100%;
     animation: fadeUp 0.5s ease-out 0.45s both;
@@ -332,11 +371,7 @@
     margin-bottom: 8px;
   }
 
-  .history-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+  .history-steps { display: flex; flex-direction: column; gap: 4px; }
 
   .history-step {
     font-family: 'JetBrains Mono', monospace;
@@ -347,23 +382,38 @@
     border-radius: 8px;
   }
 
-  /* Animations */
+  .hint-label {
+    margin-top: 10px;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .hint-step {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--gold);
+    padding: 6px 12px;
+    background: rgba(240, 192, 64, 0.06);
+    border: 1px solid rgba(240, 192, 64, 0.15);
+    border-radius: 8px;
+    margin-top: 4px;
+  }
+
   @keyframes fadeDown {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
   @keyframes popIn {
     0% { transform: scale(0.5); opacity: 0; }
     70% { transform: scale(1.1); }
     100% { transform: scale(1); opacity: 1; }
   }
-
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
     20% { transform: translateX(-8px); }
@@ -371,23 +421,39 @@
     60% { transform: translateX(-4px); }
     80% { transform: translateX(4px); }
   }
-
   @keyframes cardReveal {
     from { opacity: 0; transform: scale(0.8) rotateY(20deg); }
     to { opacity: 1; transform: scale(1) rotateY(0); }
   }
-
-  .card-reveal {
-    animation: cardReveal 0.4s ease-out both;
-  }
+  .card-reveal { animation: cardReveal 0.4s ease-out both; }
 </style>
 </head>
 <body>
+
+<div class="side-reminder left">
+  <div class="factor-label">Ways to make 24</div>
+  <div class="factor">2 × 12</div>
+  <div class="factor">3 × 8</div>
+  <div class="factor">4 × 6</div>
+</div>
+
+<div class="side-reminder right">
+  <div class="factor-label">Ways to make 24</div>
+  <div class="factor">2 × 12</div>
+  <div class="factor">3 × 8</div>
+  <div class="factor">4 × 6</div>
+</div>
 
 <div class="container">
   <div class="header">
     <h1>Make 24</h1>
     <p>Use all four numbers</p>
+  </div>
+
+  <div class="inline-reminder">
+    <div class="factor">2 × 12</div>
+    <div class="factor">3 × 8</div>
+    <div class="factor">4 × 6</div>
   </div>
 
   <div class="stats">
@@ -401,13 +467,13 @@
     </div>
   </div>
 
-  <div class="cards" id="cards"></div>
+  <div class="cards cols-4" id="cards"></div>
 
-  <div class="operators" id="operators">
-    <button class="op-btn disabled" data-op="+" onclick="selectOp('+')">+</button>
-    <button class="op-btn disabled" data-op="-" onclick="selectOp('−')">−</button>
-    <button class="op-btn disabled" data-op="*" onclick="selectOp('×')">×</button>
-    <button class="op-btn disabled" data-op="/" onclick="selectOp('÷')">÷</button>
+  <div class="operators">
+    <button class="op-btn disabled" onclick="selectOp('+')">+</button>
+    <button class="op-btn disabled" onclick="selectOp('−')">−</button>
+    <button class="op-btn disabled" onclick="selectOp('×')">×</button>
+    <button class="op-btn disabled" onclick="selectOp('÷')">÷</button>
   </div>
 
   <div class="expression-area" id="expression">
@@ -423,50 +489,81 @@
 
   <div class="actions">
     <button class="btn btn-undo" onclick="undo()">↩ Undo</button>
+    <button class="btn btn-hint" onclick="showHint()">💡 Hint</button>
     <button class="btn btn-new" onclick="newGame()">New Deal</button>
   </div>
 </div>
 
 <script>
-  // Game state
-  let numbers = [];          // current available numbers [{value, id, original}]
-  let selectedNumber = null;  // index in numbers array
-  let selectedOp = null;
-  let history = [];           // [{a, op, b, result, text}]
-  let solved = 0;
-  let streak = 0;
-  let gameOver = false;
-  let nextId = 0;
-  let currentSolution = null; // stored solution for current puzzle
-
+  // ── Constants ──
   const EPS = 1e-9;
   const OPS = [
     { symbol: '+', fn: (a, b) => a + b },
     { symbol: '−', fn: (a, b) => a - b },
     { symbol: '×', fn: (a, b) => a * b },
-    { symbol: '÷', fn: (a, b) => b !== 0 ? a / b : null },
+    { symbol: '÷', fn: (a, b) => Math.abs(b) > EPS ? a / b : null },
   ];
 
-  // Robust solver that returns a solution path or null
+  // ── State ──
+  let numbers = [];
+  let selectedNumber = null;
+  let selectedOp = null;
+  let snapshots = [];       // full state snapshots for reliable undo
+  let history = [];          // display strings
+  let solved = 0;
+  let streak = 0;
+  let gameOver = false;
+  let nextId = 0;
+  let currentSolution = null;
+  let hintIndex = 0;
+
+  // ── Stats persistence ──
+  function loadStats() {
+    try {
+      const s = window.localStorage.getItem('make24stats');
+      if (s) { const d = JSON.parse(s); solved = d.solved || 0; streak = d.streak || 0; }
+    } catch (e) { /* unavailable */ }
+    syncStatsUI();
+  }
+
+  function saveStats() {
+    try { window.localStorage.setItem('make24stats', JSON.stringify({ solved, streak })); }
+    catch (e) { /* unavailable */ }
+    syncStatsUI();
+  }
+
+  function syncStatsUI() {
+    document.getElementById('solvedCount').textContent = solved;
+    document.getElementById('streakCount').textContent = streak;
+  }
+
+  // ── Display helper ──
+  function fmt(v) {
+    if (Number.isInteger(v)) return String(v);
+    const r = Math.round(v * 10000) / 10000;
+    return String(parseFloat(r.toFixed(4)));
+  }
+
+  // ── Solver ──
   function solve24(nums) {
     if (nums.length === 1) {
       return Math.abs(nums[0].val - 24) < EPS ? [] : null;
     }
-    // Try all pairs
     for (let i = 0; i < nums.length; i++) {
       for (let j = 0; j < nums.length; j++) {
         if (i === j) continue;
         const remaining = nums.filter((_, k) => k !== i && k !== j);
         const a = nums[i], b = nums[j];
-
         for (const op of OPS) {
           const result = op.fn(a.val, b.val);
           if (result === null || !isFinite(result)) continue;
-
-          const newNums = [...remaining, { val: result, label: `(${a.label}${op.symbol}${b.label})` }];
-          const sub = solve24(newNums);
+          const newEntry = { val: result, label: `(${a.label}${op.symbol}${b.label})` };
+          const sub = solve24([...remaining, newEntry]);
           if (sub !== null) {
-            return [{ a: a.label, op: op.symbol, b: b.label, result }, ...sub];
+            return [{
+              aLabel: a.label, op: op.symbol, bLabel: b.label, result,
+              text: `${a.label} ${op.symbol} ${b.label} = ${fmt(result)}`
+            }, ...sub];
           }
         }
       }
@@ -474,17 +571,16 @@
     return null;
   }
 
-  // Quick boolean check for mid-game (no need to store path)
   function canMake24(rawNums) {
-    const nums = rawNums.map((v, i) => ({ val: v, label: String(v) }));
+    const nums = rawNums.map(v => ({ val: v, label: fmt(v) }));
     return solve24(nums) !== null;
   }
 
   function generateSolvable() {
     let attempts = 0;
     while (attempts < 10000) {
-      const rawNums = Array.from({length: 4}, () => Math.floor(Math.random() * 13) + 1);
-      const nums = rawNums.map((v, i) => ({ val: v, label: String(v) }));
+      const rawNums = Array.from({ length: 4 }, () => Math.floor(Math.random() * 13) + 1);
+      const nums = rawNums.map(v => ({ val: v, label: String(v) }));
       const solution = solve24(nums);
       if (solution !== null) {
         currentSolution = solution;
@@ -492,25 +588,133 @@
       }
       attempts++;
     }
-    // Fallback to a known solvable set
-    currentSolution = [{ a: '1', op: '×', b: '2', result: 2 }, { a: '2', op: '×', b: '3', result: 6 }, { a: '6', op: '×', b: '4', result: 24 }];
+    currentSolution = [{ text: '1 × 2 = 2' }, { text: '2 × 3 = 6' }, { text: '6 × 4 = 24' }];
     return [1, 2, 3, 4];
   }
 
+  // ── Game actions ──
   function newGame() {
     const rawNums = generateSolvable();
     nextId = 0;
-    numbers = rawNums.map(v => ({ value: v, id: nextId++, original: true }));
+    numbers = rawNums.map(v => ({ value: v, id: nextId++ }));
     selectedNumber = null;
     selectedOp = null;
+    snapshots = [];
     history = [];
+    hintIndex = 0;
     gameOver = false;
-    document.getElementById('message').textContent = '';
-    document.getElementById('message').className = 'message hint';
+    clearMessage();
     document.getElementById('historySection').style.display = 'none';
     render();
   }
 
+  function selectNumber(idx) {
+    if (gameOver) return;
+
+    // Clicking the already-selected card deselects it
+    if (selectedNumber === idx && selectedOp === null) {
+      selectedNumber = null;
+      render();
+      return;
+    }
+
+    if (selectedNumber === null || selectedOp === null) {
+      selectedNumber = idx;
+      render();
+      return;
+    }
+
+    // Second number picked — compute
+    if (idx === selectedNumber) return;
+
+    const a = numbers[selectedNumber].value;
+    const b = numbers[idx].value;
+    const opSymbol = selectedOp;
+
+    let result;
+    switch (opSymbol) {
+      case '+': result = a + b; break;
+      case '−': result = a - b; break;
+      case '×': result = a * b; break;
+      case '÷':
+        if (Math.abs(b) < EPS) {
+          showMessage("Can't divide by zero", 'lose');
+          selectedOp = null;
+          render();
+          return;
+        }
+        result = a / b;
+        break;
+    }
+
+    // Save snapshot before mutating
+    snapshots.push(numbers.map(n => ({ ...n })));
+
+    history.push(`${fmt(a)} ${opSymbol} ${fmt(b)} = ${fmt(result)}`);
+
+    // Replace two cards with result
+    const keep = numbers.filter((_, i) => i !== selectedNumber && i !== idx);
+    keep.push({ value: result, id: nextId++ });
+    numbers = keep;
+    selectedNumber = null;
+    selectedOp = null;
+
+    if (numbers.length === 1) {
+      if (Math.abs(numbers[0].value - 24) < 0.001) {
+        gameOver = true;
+        solved++;
+        streak++;
+        saveStats();
+        showMessage('✦ You made 24! ✦', 'win');
+      } else {
+        gameOver = true;
+        streak = 0;
+        saveStats();
+        showMessage(`Got ${fmt(numbers[0].value)}, not 24`, 'lose');
+      }
+    } else {
+      // Async solvability check so UI doesn't freeze
+      const vals = numbers.map(n => n.value);
+      setTimeout(() => {
+        if (!gameOver && !canMake24(vals)) {
+          showMessage('No solution from here — try undoing', 'hint');
+        }
+      }, 0);
+    }
+
+    render();
+  }
+
+  function selectOp(op) {
+    if (selectedNumber === null || gameOver) return;
+    selectedOp = op;
+    render();
+  }
+
+  // Snapshot-based undo — no value matching needed
+  function undo() {
+    if (snapshots.length === 0) return;
+    numbers = snapshots.pop();
+    history.pop();
+    selectedNumber = null;
+    selectedOp = null;
+    gameOver = false;
+    clearMessage();
+    render();
+  }
+
+  // Reveal solution one step at a time
+  function showHint() {
+    if (gameOver || !currentSolution || currentSolution.length === 0) return;
+    if (hintIndex >= currentSolution.length) {
+      showMessage('Full solution already shown', 'hint');
+      return;
+    }
+    hintIndex++;
+    render();
+  }
+
+  // ── Rendering ──
   function render() {
     renderCards();
     renderOperators();
@@ -521,40 +725,38 @@
   function renderCards() {
     const container = document.getElementById('cards');
     container.innerHTML = '';
+    container.className = `cards cols-${Math.min(numbers.length, 4)}`;
     numbers.forEach((num, idx) => {
       const card = document.createElement('div');
-      card.className = 'number-card card-reveal' + (selectedNumber === idx ? ' selected' : '') + (gameOver ? ' disabled' : '');
+      card.className = 'number-card card-reveal'
+        + (selectedNumber === idx ? ' selected' : '')
+        + (gameOver ? ' disabled' : '');
       card.style.animationDelay = (idx * 0.08) + 's';
-      const displayVal = Number.isInteger(num.value) ? num.value :
-        (Math.abs(num.value) < 100 ? parseFloat(num.value.toFixed(2)) : Math.round(num.value));
+      const dv = fmt(num.value);
       card.innerHTML = `
-        <span class="corner tl">${displayVal}</span>
-        <span>${displayVal}</span>
-        <span class="corner br">${displayVal}</span>
-      `;
-      if (!gameOver) {
-        card.onclick = () => selectNumber(idx);
-      }
+        <span class="corner tl">${dv}</span>
+        <span>${dv}</span>
+        <span class="corner br">${dv}</span>`;
+      if (!gameOver) card.onclick = () => selectNumber(idx);
       container.appendChild(card);
     });
   }
 
   function renderOperators() {
-    const btns = document.querySelectorAll('.op-btn');
     const enabled = selectedNumber !== null && selectedOp === null && !gameOver;
-    btns.forEach(btn => {
-      btn.classList.toggle('disabled', !enabled);
-    });
+    document.querySelectorAll('.op-btn').forEach(btn =>
+      btn.classList.toggle('disabled', !enabled)
+    );
   }
 
   function renderExpression() {
     const area = document.getElementById('expression');
     if (selectedNumber !== null && selectedOp === null) {
-      area.innerHTML = `<span class="expr-token expr-number">${numbers[selectedNumber].value}</span>
+      area.innerHTML = `<span class="expr-token expr-number">${fmt(numbers[selectedNumber].value)}</span>
         <span class="expr-token expr-op">?</span>
         <span class="expr-placeholder">pick an operator</span>`;
     } else if (selectedNumber !== null && selectedOp !== null) {
-      area.innerHTML = `<span class="expr-token expr-number">${numbers[selectedNumber].value}</span>
+      area.innerHTML = `<span class="expr-token expr-number">${fmt(numbers[selectedNumber].value)}</span>
         <span class="expr-token expr-op">${selectedOp}</span>
         <span class="expr-placeholder">pick second number</span>`;
     } else {
@@ -564,147 +766,27 @@
 
   function renderHistory() {
     const section = document.getElementById('historySection');
-    const steps = document.getElementById('historySteps');
-    if (history.length === 0) {
+    const stepsEl = document.getElementById('historySteps');
+
+    if (history.length === 0 && hintIndex === 0) {
       section.style.display = 'none';
       return;
     }
     section.style.display = 'block';
-    steps.innerHTML = history.map((h, i) =>
-      `<div class="history-step">${i + 1}. ${h.text}</div>`
+
+    let html = history.map((t, i) =>
+      `<div class="history-step">${i + 1}. ${t}</div>`
     ).join('');
-  }
 
-  function selectNumber(idx) {
-    if (gameOver) return;
-
-    if (selectedNumber === null) {
-      // First number selection
-      selectedNumber = idx;
-      render();
-    } else if (selectedOp === null) {
-      // Clicked a number but no op yet — switch selection
-      selectedNumber = idx;
-      render();
-    } else {
-      // We have first number and op, this is the second number
-      if (idx === selectedNumber) return; // can't use same card
-
-      const a = numbers[selectedNumber].value;
-      const b = numbers[idx].value;
-      const opSymbol = selectedOp;
-      let result;
-
-      switch (opSymbol) {
-        case '+': result = a + b; break;
-        case '−': result = a - b; break;
-        case '×': result = a * b; break;
-        case '÷':
-          if (b === 0) {
-            showMessage('Can\'t divide by zero', 'lose');
-            selectedOp = null;
-            render();
-            return;
-          }
-          result = a / b;
-          break;
+    if (hintIndex > 0 && currentSolution) {
+      html += `<div class="hint-label">Solution hint</div>`;
+      for (let i = 0; i < Math.min(hintIndex, currentSolution.length); i++) {
+        html += `<div class="hint-step">${currentSolution[i].text}</div>`;
       }
-
-      // Format result nicely
-      const displayResult = Number.isInteger(result) ? result : Math.round(result * 10000) / 10000;
-
-      // Record history
-      history.push({
-        a, op: opSymbol, b, result,
-        text: `${a} ${opSymbol} ${b} = ${displayResult}`,
-        removedIds: [numbers[selectedNumber].id, numbers[idx].id],
-        newId: nextId
-      });
-
-      // Replace the two numbers with the result
-      const newNumbers = numbers.filter((_, i) => i !== selectedNumber && i !== idx);
-      newNumbers.push({ value: result, id: nextId++, original: false });
-      numbers = newNumbers;
-      selectedNumber = null;
-      selectedOp = null;
-
-      // Check win/lose
-      if (numbers.length === 1) {
-        if (Math.abs(numbers[0].value - 24) < 0.001) {
-          gameOver = true;
-          solved++;
-          streak++;
-          document.getElementById('solvedCount').textContent = solved;
-          document.getElementById('streakCount').textContent = streak;
-          showMessage('✦ You made 24! ✦', 'win');
-        } else {
-          gameOver = true;
-          streak = 0;
-          document.getElementById('streakCount').textContent = streak;
-          showMessage(`Got ${Number.isInteger(numbers[0].value) ? numbers[0].value : numbers[0].value.toFixed(2)}, not 24`, 'lose');
-        }
-      } else {
-        // Check if remaining numbers can still make 24
-        const vals = numbers.map(n => n.value);
-        if (!canMake24(vals)) {
-          showMessage('No solution from here — try undoing', 'hint');
-        }
-      }
-
-      render();
     }
+
+    stepsEl.innerHTML = html;
   }
-
-  function selectOp(op) {
-    if (selectedNumber === null || gameOver) return;
-    selectedOp = op;
-    render();
-  }
-
-  function undo() {
-    if (history.length === 0) return;
-
-    gameOver = false;
-    document.getElementById('message').textContent = '';
-    document.getElementById('message').className = 'message';
-
-    history.pop();
-    rebuildFromHistory();
-    selectedNumber = null;
-    selectedOp = null;
-    render();
-  }
-
-  let originalNumbers = [];
-
-  function rebuildFromHistory() {
-    nextId = 0;
-    numbers = originalNumbers.map(v => ({ value: v, id: nextId++, original: true }));
-
-    for (const h of history) {
-      const idxA = numbers.findIndex(n => Math.abs(n.value - h.a) < EPS);
-      let idxB = numbers.findIndex((n, i) => Math.abs(n.value - h.b) < EPS && i !== idxA);
-      if (idxB === -1) idxB = numbers.findIndex(n => Math.abs(n.value - h.b) < EPS);
-
-      let result;
-      switch (h.op) {
-        case '+': result = h.a + h.b; break;
-        case '−': result = h.a - h.b; break;
-        case '×': result = h.a * h.b; break;
-        case '÷': result = h.a / h.b; break;
-      }
-
-      numbers = numbers.filter((_, i) => i !== idxA && i !== idxB);
-      numbers.push({ value: result, id: nextId++, original: false });
-    }
-  }
-
-  // Wrap newGame to also save originalNumbers
-  const _baseNewGame = newGame;
-  newGame = function() {
-    _baseNewGame();
-    originalNumbers = numbers.map(n => n.value);
-  };
 
   function showMessage(text, type) {
     const msg = document.getElementById('message');
@@ -712,20 +794,32 @@
     msg.className = 'message ' + (type || '');
   }
 
-  // Keyboard shortcuts
+  function clearMessage() {
+    const msg = document.getElementById('message');
+    msg.textContent = '';
+    msg.className = 'message';
+  }
+
+  // ── Keyboard shortcuts (guarded against input fields) ──
   document.addEventListener('keydown', (e) => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+
     if (e.key === '+' || e.key === '=') selectOp('+');
-    if (e.key === '-') selectOp('−');
-    if (e.key === '*' || e.key === 'x') selectOp('×');
-    if (e.key === '/') selectOp('÷');
-    if (e.key === 'z' && (e.ctrlKey || e.metaKey)) undo();
-    if (e.key === 'n') newGame();
-    if (e.key >= '1' && e.key <= '4' && numbers.length >= parseInt(e.key)) {
+    else if (e.key === '-') selectOp('−');
+    else if (e.key === '*' || e.key === 'x') selectOp('×');
+    else if (e.key === '/') { e.preventDefault(); selectOp('÷'); }
+    else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); undo(); }
+    else if (e.key === 'n') newGame();
+    else if (e.key === 'h') showHint();
+    else if (e.key === 'Escape') { selectedNumber = null; selectedOp = null; render(); }
+    else if (e.key >= '1' && e.key <= '4' && numbers.length >= parseInt(e.key)) {
       selectNumber(parseInt(e.key) - 1);
     }
   });
 
-  // Start
+  // ── Init ──
+  loadStats();
   newGame();
 </script>
 </body>
