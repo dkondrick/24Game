@@ -738,7 +738,6 @@
 
     // Save snapshot before mutating
     snapshots.push(numbers.map(n => ({ ...n })));
-    resetEffortTimer();
 
     history.push(`${fmt(a)} ${opSymbol} ${fmt(b)} = ${fmt(result)}`);
 
