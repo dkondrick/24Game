@@ -602,6 +602,7 @@
     snapshots = [];
     history = [];
     hintIndex = 0;
+    lastProgressTime = Date.now();
     gameOver = false;
     clearMessage();
     document.getElementById('historySection').style.display = 'none';
@@ -649,6 +650,7 @@
 
     // Save snapshot before mutating
     snapshots.push(numbers.map(n => ({ ...n })));
+    lastProgressTime = Date.now();
 
     history.push(`${fmt(a)} ${opSymbol} ${fmt(b)} = ${fmt(result)}`);
 
@@ -703,14 +705,25 @@
     render();
   }
 
-  // Reveal solution one step at a time
+  let lastProgressTime = Date.now(); // tracks last successful step or new game
+
+  // Reveal only the first step of the solution, once per puzzle, after 3 min
   function showHint() {
     if (gameOver || !currentSolution || currentSolution.length === 0) return;
-    if (hintIndex >= currentSolution.length) {
-      showMessage('Full solution already shown', 'hint');
+    if (hintIndex >= 1) {
+      showMessage('One hint per deal!', 'hint');
       return;
     }
-    hintIndex++;
+    const elapsed = Math.floor((Date.now() - lastProgressTime) / 1000);
+    const remaining = 180 - elapsed;
+    if (remaining > 0) {
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      const timeStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+      showMessage(`Hint unlocks in ${timeStr} — keep trying!`, 'hint');
+      return;
+    }
+    hintIndex = 1;
     render();
   }
 
