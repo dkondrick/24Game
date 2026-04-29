@@ -458,12 +458,20 @@
 
   <div class="stats">
     <div class="stat">
-      <div class="stat-value" id="solvedCount">0</div>
-      <div class="stat-label">Solved</div>
+      <div class="stat-value" id="todayCount">0</div>
+      <div class="stat-label">Today</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="totalCount">0</div>
+      <div class="stat-label">Total</div>
     </div>
     <div class="stat">
       <div class="stat-value" id="streakCount">0</div>
       <div class="stat-label">Streak</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="hintTimer">3:00</div>
+      <div class="stat-label">Hint</div>
     </div>
   </div>
 
@@ -508,32 +516,110 @@
   let numbers = [];
   let selectedNumber = null;
   let selectedOp = null;
-  let snapshots = [];       // full state snapshots for reliable undo
-  let history = [];          // display strings
-  let solved = 0;
+  let snapshots = [];
+  let history = [];
+  let total = 0;
+  let today = 0;
+  let todayDate = '';
   let streak = 0;
   let gameOver = false;
   let nextId = 0;
   let currentSolution = null;
   let hintIndex = 0;
 
+  // ── Activity-based hint timer ──
+  // Only counts seconds where student is actively trying (clicking/tapping).
+  // Resets on each successful step or new game.
+  const HINT_THRESHOLD = 180; // 3 minutes of active effort
+  let activeEffortSeconds = 0;
+  let lastInteractionTime = 0;
+  const IDLE_CUTOFF = 15000; // 15s without interaction = idle, stop counting
+
+  let effortInterval = null;
+
+  function startEffortTimer() {
+    if (effortInterval) clearInterval(effortInterval);
+    activeEffortSeconds = 0;
+    lastInteractionTime = Date.now();
+    updateHintTimerUI();
+    effortInterval = setInterval(() => {
+      if (gameOver) return;
+      const now = Date.now();
+      if (now - lastInteractionTime < IDLE_CUTOFF) {
+        activeEffortSeconds++;
+      }
+      updateHintTimerUI();
+    }, 1000);
+  }
+
+  function updateHintTimerUI() {
+    const el = document.getElementById('hintTimer');
+    if (!el) return;
+    if (hintIndex >= 1) {
+      el.textContent = '✓';
+      el.style.color = 'var(--green)';
+      return;
+    }
+    const remaining = Math.max(0, HINT_THRESHOLD - activeEffortSeconds);
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    el.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    if (remaining <= 0) {
+      el.style.color = 'var(--green)';
+    } else if (Date.now() - lastInteractionTime >= IDLE_CUTOFF) {
+      el.style.color = 'var(--red)';
+    } else {
+      el.style.color = 'var(--gold)';
+    }
+  }
+
+  function resetEffortTimer() {
+    activeEffortSeconds = 0;
+    lastInteractionTime = Date.now();
+    updateHintTimerUI();
+  }
+
+  function recordInteraction() {
+    lastInteractionTime = Date.now();
+    updateHintTimerUI();
+  }
+
   // ── Stats persistence ──
+  function getTodayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
   function loadStats() {
     try {
       const s = window.localStorage.getItem('make24stats');
-      if (s) { const d = JSON.parse(s); solved = d.solved || 0; streak = d.streak || 0; }
+      if (s) {
+        const d = JSON.parse(s);
+        total = d.total || 0;
+        streak = d.streak || 0;
+        todayDate = d.todayDate || '';
+        today = (todayDate === getTodayStr()) ? (d.today || 0) : 0;
+      }
     } catch (e) { /* unavailable */ }
     syncStatsUI();
   }
 
   function saveStats() {
-    try { window.localStorage.setItem('make24stats', JSON.stringify({ solved, streak })); }
-    catch (e) { /* unavailable */ }
+    const dateStr = getTodayStr();
+    if (todayDate !== dateStr) {
+      todayDate = dateStr;
+      today = 0;
+    }
+    try {
+      window.localStorage.setItem('make24stats', JSON.stringify({
+        total, today, todayDate, streak
+      }));
+    } catch (e) { /* unavailable */ }
     syncStatsUI();
   }
 
   function syncStatsUI() {
-    document.getElementById('solvedCount').textContent = solved;
+    document.getElementById('todayCount').textContent = today;
+    document.getElementById('totalCount').textContent = total;
     document.getElementById('streakCount').textContent = streak;
   }
 
@@ -602,7 +688,8 @@
     snapshots = [];
     history = [];
     hintIndex = 0;
-    lastProgressTime = Date.now();
+    resetEffortTimer();
+    startEffortTimer();
     gameOver = false;
     clearMessage();
     document.getElementById('historySection').style.display = 'none';
@@ -611,6 +698,7 @@
 
   function selectNumber(idx) {
     if (gameOver) return;
+    recordInteraction();
 
     // Clicking the already-selected card deselects it
     if (selectedNumber === idx && selectedOp === null) {
@@ -650,7 +738,7 @@
 
     // Save snapshot before mutating
     snapshots.push(numbers.map(n => ({ ...n })));
-    lastProgressTime = Date.now();
+    resetEffortTimer();
 
     history.push(`${fmt(a)} ${opSymbol} ${fmt(b)} = ${fmt(result)}`);
 
@@ -664,7 +752,8 @@
     if (numbers.length === 1) {
       if (Math.abs(numbers[0].value - 24) < 0.001) {
         gameOver = true;
-        solved++;
+        total++;
+        today++;
         streak++;
         saveStats();
         showMessage('✦ You made 24! ✦', 'win');
@@ -689,6 +778,7 @@
 
   function selectOp(op) {
     if (selectedNumber === null || gameOver) return;
+    recordInteraction();
     selectedOp = op;
     render();
   }
@@ -696,6 +786,7 @@
   // Snapshot-based undo — no value matching needed
   function undo() {
     if (snapshots.length === 0) return;
+    recordInteraction();
     numbers = snapshots.pop();
     history.pop();
     selectedNumber = null;
@@ -705,25 +796,24 @@
     render();
   }
 
-  let lastProgressTime = Date.now(); // tracks last successful step or new game
-
-  // Reveal only the first step of the solution, once per puzzle, after 3 min
+  // Reveal only the first step, once per puzzle, after 3 min of active effort
   function showHint() {
     if (gameOver || !currentSolution || currentSolution.length === 0) return;
+    recordInteraction();
     if (hintIndex >= 1) {
       showMessage('One hint per deal!', 'hint');
       return;
     }
-    const elapsed = Math.floor((Date.now() - lastProgressTime) / 1000);
-    const remaining = 180 - elapsed;
+    const remaining = HINT_THRESHOLD - activeEffortSeconds;
     if (remaining > 0) {
       const m = Math.floor(remaining / 60);
       const s = remaining % 60;
       const timeStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
-      showMessage(`Hint unlocks in ${timeStr} — keep trying!`, 'hint');
+      showMessage(`Hint unlocks after ${timeStr} of trying — keep working!`, 'hint');
       return;
     }
     hintIndex = 1;
+    updateHintTimerUI();
     render();
   }
 
@@ -750,7 +840,10 @@
         <span class="corner tl">${dv}</span>
         <span>${dv}</span>
         <span class="corner br">${dv}</span>`;
-      if (!gameOver) card.onclick = () => selectNumber(idx);
+      if (!gameOver) {
+        card.onclick = () => selectNumber(idx);
+        card.onmouseover = recordInteraction;
+      }
       container.appendChild(card);
     });
   }
